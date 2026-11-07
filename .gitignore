@@ -1,0 +1,6 @@
+
+# guardenv: plaintext secrets (encrypted copies are guarded.env*)
+.env
+.env.*
+!.env.example
+*.exe

@@ -1,0 +1,6 @@
+{
+  "secret": "guardenv-c7aed16c4309962f",
+  "files": [
+    ".env"
+  ]
+}

@@ -4,6 +4,23 @@ Commit your `.env` secrets to git safely: they are stored encrypted (AES-256-GCM
 
 ## Install
 
+**Windows (Scoop)**
+
+    # one-time Scoop setup, if you don't have it (no admin needed)
+    Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser
+    irm get.scoop.sh | iex
+
+    scoop bucket add guardenv https://github.com/yantratmika/scoop-guardenv
+    scoop install guardenv
+
+Update with `scoop update guardenv`.
+
+**Any OS: download**
+
+Grab the zip / tar.gz for your platform from the [Releases](https://github.com/yantratmika/guardenv/releases) page, extract it, and put `guardenv` on your `PATH`. On Windows, a browser download may trigger a SmartScreen warning because the binary is unsigned (More info → Run anyway).
+
+**With Go**
+
     go install github.com/yantratmika/guardenv@latest
 
 Make sure `guardenv` is on your `PATH` (the git hooks call it).
@@ -13,6 +30,19 @@ Make sure `guardenv` is on your `PATH` (the git hooks call it).
     guardenv init      # in a repo: finds .env files, updates .gitignore, creates the secret, writes .guardenv/config, installs hooks
     guardenv encrypt   # .env -> guarded.env   (runs automatically on pre-commit, and stages the result)
     guardenv decrypt   # guarded.env -> .env   (runs automatically after checkout / pull / merge)
+
+## Releasing (maintainers)
+
+One-time setup:
+1. Create an empty public repo `yantratmika/scoop-guardenv` (the Scoop bucket).
+2. Create a GitHub personal access token with write access to that repo, and save it in this repo as the Actions secret `SCOOP_BUCKET_TOKEN`.
+
+Each release:
+
+    git tag v0.1.0
+    git push origin v0.1.0
+
+The `release` workflow builds all platforms, creates the GitHub Release with checksums, and updates the Scoop bucket. To test the build locally without publishing: `goreleaser release --snapshot --clean`.
 
 ## Git hooks
 

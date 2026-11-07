@@ -1,0 +1,36 @@
+version: 2
+
+project_name: guardenv
+
+before:
+  hooks:
+    - go vet ./...
+
+builds:
+  - env:
+      - CGO_ENABLED=0
+    goos: [windows, linux, darwin]
+    goarch: [amd64, arm64]
+    ldflags:
+      - -s -w -X main.version={{.Version}}
+
+archives:
+  - formats: [tar.gz]
+    format_overrides:
+      - goos: windows
+        formats: [zip]
+    files:
+      - README.md
+
+checksum:
+  name_template: checksums.txt
+
+# Publishes a Scoop manifest to the bucket repo on every release.
+scoops:
+  - repository:
+      owner: yantratmika
+      name: scoop-guardenv
+      token: "{{ .Env.SCOOP_BUCKET_TOKEN }}"
+    homepage: https://github.com/yantratmika/guardenv
+    description: Keep .env secrets in git, encrypted
+    license: MIT

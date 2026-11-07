@@ -24,6 +24,9 @@ const (
 	magic      = "GUARDENV1\n"
 )
 
+// version is set at release time via -ldflags "-X main.version=...".
+var version = "dev"
+
 type Config struct {
 	Secret string   `json:"secret"` // file name under ~/.guardenv
 	Files  []string `json:"files"`  // .env files, relative to repo root, slash separated
@@ -45,6 +48,8 @@ func main() {
 		err = cmdDecrypt(hasFlag(args, "--force"))
 	case "install-hooks":
 		err = installHooks()
+	case "version", "--version":
+		fmt.Println("guardenv", version)
 	case "help", "-h", "--help":
 		usage()
 	default:
