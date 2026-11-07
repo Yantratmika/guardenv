@@ -430,8 +430,6 @@ func cmdDecrypt(force bool) error {
 	return nil
 }
 
-// ---------- hooks ----------
-
 func installHooks() error {
 	root, err := repoRoot()
 	if err != nil {
