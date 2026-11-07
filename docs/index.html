@@ -1,0 +1,191 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>guardenv - keep .env secrets in Git, encrypted</title>
+    <meta
+      name="description"
+      content="guardenv encrypts your project's .env files into guarded.env files you can commit, and restores them automatically on clone and pull. Free, open source, MIT."
+    />
+    <link rel="icon" href="assets/yantratmika-logo.png" />
+    <link rel="stylesheet" href="style.css" />
+  </head>
+  <body>
+    <header class="site dark">
+      <div class="wrap">
+        <a class="brand" href="index.html"
+          ><img src="assets/yantratmika-logo.png" alt="" />guardenv</a
+        >
+        <nav class="main" aria-label="Main">
+          <a href="index.html" aria-current="page">Product</a>
+          <a href="why.html">Why guardenv</a>
+          <a href="how-it-works.html">How it works</a>
+          <a href="https://github.com/yantratmika/guardenv">GitHub</a>
+        </nav>
+      </div>
+    </header>
+
+    <main>
+      <div class="hero dark">
+        <div class="wrap">
+          <div class="kicker">Open source · MIT · by Yantratmika</div>
+          <h1>Your <code>.env</code> secrets,<br />safe inside Git.</h1>
+          <p class="lead">
+            guardenv encrypts your <code>.env</code> files into
+            <code>guarded.env</code> files that you commit with the rest of your
+            code, and puts the plain <code>.env</code> back automatically after
+            every clone and pull. One project, one repository, no separate
+            secrets folder to chase.
+          </p>
+          <div class="btns">
+            <a class="btn" href="#install">Install guardenv</a>
+            <a class="btn ghost" href="why.html">Why you need it</a>
+            <a class="btn ghost" href="how-it-works.html">How it works</a>
+          </div>
+        </div>
+      </div>
+
+      <div class="band dark">
+        <div class="wrap">
+          <section>
+            <h2>What it does</h2>
+            <div class="grid">
+              <div class="card">
+                <span class="num">01</span>
+                <h3>Encrypts on commit</h3>
+                <p>
+                  A <code>pre-commit</code> hook encrypts every tracked
+                  <code>.env</code> with AES-256-GCM into
+                  <code>guarded.env</code> and stages it. Plaintext never
+                  reaches Git.
+                </p>
+              </div>
+              <div class="card">
+                <span class="num">02</span>
+                <h3>Restores on pull</h3>
+                <p>
+                  <code>post-checkout</code> and <code>post-merge</code> hooks
+                  decrypt <code>guarded.env</code> back to <code>.env</code>, so
+                  your app just works after <code>git clone</code> or
+                  <code>git pull</code>.
+                </p>
+              </div>
+              <div class="card">
+                <span class="num">03</span>
+                <h3>Keeps <code>.env</code> ignored</h3>
+                <p>
+                  <code>guardenv init</code> makes sure <code>.env</code> files
+                  are in <code>.gitignore</code>, finds every one in your repo
+                  (monorepos included), and writes the config.
+                </p>
+              </div>
+              <div class="card">
+                <span class="num">04</span>
+                <h3>Key stays off the repo</h3>
+                <p>
+                  The key lives in <code>~/.guardenv/&lt;name&gt;</code>, with a
+                  unique name per project, so work for two different teams never
+                  clashes.
+                </p>
+              </div>
+            </div>
+          </section>
+        </div>
+      </div>
+
+      <div class="wrap">
+        <section>
+          <h2>Quick start</h2>
+          <pre><code>cd your-project
+guardenv init          # find .env files, create key, install git hooks
+git add -A
+git commit -m "Add guardenv"   # guarded.env is encrypted and committed for you</code></pre>
+          <p>
+            For a teammate: clone the repository, save the shared key to
+            <code>~/.guardenv/&lt;secret-name&gt;</code> (the name is in
+            <code>.guardenv/config</code>), then run:
+          </p>
+          <pre><code>guardenv install-hooks
+guardenv decrypt       # .env files appear</code></pre>
+          <p>
+            After that, everything is automatic.
+            <a href="how-it-works.html">See exactly what happens at each step</a
+            >.
+          </p>
+        </section>
+
+        <section id="install">
+          <h2>Install</h2>
+          <h3>Windows (Scoop)</h3>
+          <pre><code>scoop bucket add guardenv https://github.com/yantratmika/scoop-guardenv
+scoop install guardenv</code></pre>
+          <p>
+            New to Scoop? <code>irm get.scoop.sh | iex</code> in PowerShell
+            installs it in one minute, with no admin rights.
+          </p>
+          <h3>Any OS</h3>
+          <p>
+            Download the archive for your platform from the
+            <a href="https://github.com/yantratmika/guardenv/releases"
+              >Releases page</a
+            >, extract it, and put <code>guardenv</code> on your
+            <code>PATH</code>. With Go installed you can also run:
+          </p>
+          <pre><code>go install github.com/yantratmika/guardenv@latest</code></pre>
+          <div class="note">
+            <p>
+              <strong>Windows note:</strong> the binary is not code-signed.
+              Scoop installs normally run without a prompt; a manual browser
+              download may show a SmartScreen warning (More info, then Run
+              anyway).
+            </p>
+          </div>
+        </section>
+
+        <section>
+          <h2>Good to know</h2>
+          <ul>
+            <li>
+              <strong>Anyone with the key can read the secrets.</strong> Share
+              it over a secure channel, and treat it like a password.
+            </li>
+            <li>
+              <strong
+                >If you lose the key, the encrypted files cannot be
+                recovered.</strong
+              >
+              Keep a backup in your password manager.
+            </li>
+            <li>
+              guardenv keeps small teams' project secrets convenient. It is not
+              a replacement for a production secrets manager.
+              <a href="why.html#limits">Read the limits.</a>
+            </li>
+          </ul>
+        </section>
+      </div>
+    </main>
+
+    <footer class="site dark">
+      <div class="wrap">
+        <div class="credit">
+          <img src="assets/yantratmika-logo.png" alt="" />
+          <div>
+            Built and maintained by
+            <a href="https://yantratmika.com">Yantratmika</a>, a specialist
+            engineering studio. Released under the MIT license.
+          </div>
+        </div>
+        <div class="links">
+          <a href="https://github.com/yantratmika/guardenv">GitHub</a>
+          <a href="https://github.com/yantratmika/guardenv/blob/main/LICENSE"
+            >License</a
+          >
+          <a href="privacy.html">Privacy</a>
+          <a href="terms.html">Terms of use</a>
+        </div>
+      </div>
+    </footer>
+  </body>
+</html>

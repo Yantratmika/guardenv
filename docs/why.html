@@ -1,0 +1,98 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Why guardenv - the .env problem</title>
+<meta name="description" content="Why project secrets are hard to share, why committing plaintext .env files is dangerous, and how guardenv solves it without extra infrastructure.">
+<link rel="icon" href="assets/yantratmika-logo.png">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header class="site dark"><div class="wrap">
+  <a class="brand" href="index.html"><img src="assets/yantratmika-logo.png" alt="">guardenv</a>
+  <nav class="main" aria-label="Main">
+    <a href="index.html">Product</a>
+    <a href="why.html" aria-current="page">Why guardenv</a>
+    <a href="how-it-works.html">How it works</a>
+    <a href="https://github.com/yantratmika/guardenv">GitHub</a>
+  </nav>
+</div></header>
+
+<main>
+<div class="hero dark"><div class="wrap narrow">
+  <div class="kicker">Why guardenv</div>
+  <h1>Secrets want to live with the code. Git doesn't want them there.</h1>
+  <p class="lead">Every project has a <code>.env</code>. Every team has a different, slightly awkward way of sharing it.</p>
+</div></div>
+
+<div class="wrap narrow">
+<section>
+  <h2>The problem</h2>
+  <p>A <code>.env</code> file carries the things your app cannot run without: API keys, database passwords, tokens. It must not be committed in plain text, so it is git-ignored. And that creates a different problem: the file now lives outside your repository, and has to be passed around by hand.</p>
+  <ul>
+    <li><strong>New teammate, day one.</strong> "Can someone send me the .env?" It arrives by chat or email, is probably out of date, and now sits in a message history forever.</li>
+    <li><strong>Many projects.</strong> People work on many repositories, for different teams. Secrets scattered across chats, notes and desktop folders get lost, mixed up, or reused where they shouldn't be.</li>
+    <li><strong>Drift.</strong> Someone adds a variable. Half the team does not know, and spends an hour on a failing build.</li>
+    <li><strong>Accidents.</strong> The cost of the other extreme, committing the plaintext file once, is high. Secrets stay in Git history even after you delete the file.</li>
+  </ul>
+  <p>Setting up a full secrets platform is the textbook answer, but it is heavy for many projects and small teams. People want <em>everything about the project in one place</em>.</p>
+</section>
+
+</div>
+<div class="band dark"><div class="wrap narrow">
+<section>
+  <h2>How guardenv helps</h2>
+  <p>guardenv gives you that one place: the repository. The secrets travel with the code, but only in encrypted form.</p>
+  <div class="grid">
+    <div class="card"><h3>One source of truth</h3><p>The encrypted <code>guarded.env</code> is versioned with the code. A change to a variable is a normal commit, with history and review.</p></div>
+    <div class="card"><h3>Zero-effort onboarding</h3><p>Clone, drop in the key once, and the right <code>.env</code> appears. After that, pulls keep it current.</p></div>
+    <div class="card"><h3>Safe by default</h3><p><code>.env</code> is kept in <code>.gitignore</code>, and the commit hook encrypts before anything is recorded.</p></div>
+    <div class="card"><h3>No servers, no accounts</h3><p>A single command-line program and a key file. Nothing to host, sign up for, or pay for.</p></div>
+  </div>
+</section>
+</div></div>
+<div class="wrap narrow">
+<section>
+  <h2>Who it is for</h2>
+  <ul>
+    <li>Small teams and open collaborators who share development and staging credentials.</li>
+    <li>Consultants and freelancers who juggle several client projects on one laptop.</li>
+    <li>Monorepos with several <code>.env</code> files in different folders.</li>
+    <li>Anyone tired of hunting for "the latest .env".</li>
+  </ul>
+</section>
+
+<section id="limits">
+  <h2>What it is not</h2>
+  <p>Being clear about limits is part of using any security tool well.</p>
+  <ul>
+    <li><strong>One shared key per project.</strong> Anyone who has the key can decrypt every guarded file. There are no per-person permissions.</li>
+    <li><strong>No key rotation yet.</strong> If a teammate leaves, rotate the secrets themselves (the API keys and passwords), and consider creating a new key. Older commits remain readable with the older key.</li>
+    <li><strong>Your key is your responsibility.</strong> It is stored as a file in your home folder. If it is lost, the encrypted files cannot be recovered.</li>
+    <li><strong>Not for production.</strong> For production workloads, use your cloud's secrets manager. guardenv is for development and shared project configuration.</li>
+    <li><strong>It does not hide secrets on your machine.</strong> The decrypted <code>.env</code> is a plain file, as it always was.</li>
+  </ul>
+</section>
+
+<section>
+  <h2>Ready to try it?</h2>
+  <div class="btns">
+    <a class="btn" href="index.html#install">Install guardenv</a>
+    <a class="btn ghost" href="how-it-works.html">See how it works</a>
+  </div>
+</section>
+</div>
+</main>
+
+<footer class="site dark"><div class="wrap">
+  <div class="credit"><img src="assets/yantratmika-logo.png" alt=""><div>Built and maintained by <a href="https://yantratmika.com">Yantratmika</a>, a specialist engineering studio. Released under the MIT license.</div></div>
+  <div class="links">
+    <a href="https://github.com/yantratmika/guardenv">GitHub</a>
+    <a href="https://github.com/yantratmika/guardenv/blob/main/LICENSE">License</a>
+    <a href="privacy.html">Privacy</a>
+    <a href="terms.html">Terms of use</a>
+  </div>
+</div></footer>
+</body>
+</html>

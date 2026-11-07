@@ -1,0 +1,149 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>How guardenv works - encryption, hooks, releases</title>
+<meta name="description" content="A technical walkthrough of guardenv: init, the AES-256-GCM file format, key storage, git hooks, decrypt behaviour and the automated release pipeline.">
+<link rel="icon" href="assets/yantratmika-logo.png">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header class="site dark"><div class="wrap">
+  <a class="brand" href="index.html"><img src="assets/yantratmika-logo.png" alt="">guardenv</a>
+  <nav class="main" aria-label="Main">
+    <a href="index.html">Product</a>
+    <a href="why.html">Why guardenv</a>
+    <a href="how-it-works.html" aria-current="page">How it works</a>
+    <a href="https://github.com/yantratmika/guardenv">GitHub</a>
+  </nav>
+</div></header>
+
+<main>
+<div class="hero dark"><div class="wrap narrow">
+  <div class="kicker">Under the hood</div>
+  <h1>How guardenv works</h1>
+  <p class="lead">A single Go program with no dependencies beyond the standard library. The full source is one file you can read in an evening: <a href="https://github.com/yantratmika/guardenv/blob/main/main.go">main.go on GitHub</a>.</p>
+  <div class="btns"><a class="btn" href="https://github.com/yantratmika/guardenv">View the repository</a></div>
+</div></div>
+
+<div class="wrap narrow">
+<section>
+  <h2>The pieces</h2>
+  <div class="scroll"><table>
+    <tr><th>What</th><th>Where</th><th>Committed?</th></tr>
+    <tr><td>Plain secrets</td><td><code>.env</code>, <code>.env.local</code>, … in any folder</td><td>No (git-ignored)</td></tr>
+    <tr><td>Encrypted secrets</td><td><code>guarded.env</code> next to each <code>.env</code> (<code>.env.local</code> becomes <code>guarded.env.local</code>)</td><td>Yes</td></tr>
+    <tr><td>Project config</td><td><code>.guardenv/config</code></td><td>Yes</td></tr>
+    <tr><td>The key</td><td><code>~/.guardenv/&lt;secret-name&gt;</code></td><td>Never</td></tr>
+  </table></div>
+  <p>The config is plain JSON. It names the key file and lists the guarded files:</p>
+<pre><code>{
+  "secret": "myproject-3f9c1a7d2b8e4a10",
+  "files": [".env", "api/.env"]
+}</code></pre>
+</section>
+
+<section>
+  <h2><code>guardenv init</code></h2>
+  <ol>
+    <li>Makes sure <code>.env</code> and <code>.env.*</code> are in <code>.gitignore</code> (and <code>!.env.example</code>, so templates stay committable).</li>
+    <li>Walks the repository looking for <code>.env</code> and <code>.env.*</code> files. It skips <code>.git</code> and any directory Git itself ignores, such as <code>node_modules</code>. Files named <code>.example</code>, <code>.sample</code>, <code>.template</code> or <code>.dist</code> are left alone.</li>
+    <li>Generates a random 32-byte key and saves it as hex to <code>~/.guardenv/&lt;project&gt;-&lt;random&gt;</code>, readable only by you. The unique name stops two projects clashing. If the project already has a config, the existing key is reused.</li>
+    <li>Writes <code>.guardenv/config</code>.</li>
+    <li>Installs the git hooks.</li>
+  </ol>
+</section>
+
+</div>
+<div class="band dark"><div class="wrap narrow">
+<section>
+  <h2>Encryption</h2>
+  <p>Each file is encrypted with <strong>AES-256-GCM</strong> from Go's standard crypto library. GCM is authenticated encryption: it hides the content and detects tampering or a wrong key, instead of returning garbage.</p>
+<pre><code>guarded.env =  "GUARDENV1\n"  ||  nonce (12 bytes, random)  ||  ciphertext + auth tag
+               └─ header, also bound in as authenticated data</code></pre>
+  <ul>
+    <li>A fresh random nonce is used every time a file is encrypted.</li>
+    <li>If a <code>guarded.env</code> already decrypts to exactly the current <code>.env</code>, it is left untouched, so Git history is not filled with meaningless changes.</li>
+    <li>Decryption fails with a clear error if the key is wrong or the file has been modified.</li>
+  </ul>
+</section>
+</div></div>
+<div class="wrap narrow">
+<section>
+  <h2>Git hooks</h2>
+  <p>Hooks are installed into the repository's own hooks folder, so they apply to that repository only.</p>
+  <div class="scroll"><table>
+    <tr><th>Hook</th><th>Command</th><th>When</th></tr>
+    <tr><td><code>pre-commit</code></td><td><code>guardenv encrypt --stage</code></td><td>Just before every commit: encrypts each <code>.env</code>, then <code>git add</code>s the <code>guarded.env</code> files so they are in that commit. If this fails, the commit is blocked.</td></tr>
+    <tr><td><code>post-checkout</code></td><td><code>guardenv decrypt</code></td><td>After clone and branch switches.</td></tr>
+    <tr><td><code>post-merge</code></td><td><code>guardenv decrypt</code></td><td>After <code>git pull</code> or merge.</td></tr>
+  </table></div>
+  <p>If a hook file already exists, guardenv appends a marked block (<code># guardenv-managed</code>) and never overwrites your own hook logic. Running <code>install-hooks</code> again does not duplicate it. Git does not share hooks between clones, so each teammate runs <code>guardenv install-hooks</code> once per clone.</p>
+</section>
+
+<section>
+  <h2>Decrypting safely</h2>
+  <ul>
+    <li>If <code>.env</code> is missing, it is created from <code>guarded.env</code> (permissions limited to you).</li>
+    <li>If <code>.env</code> already exists and matches, nothing happens.</li>
+    <li>If <code>.env</code> exists but <strong>differs</strong>, guardenv keeps your local file and prints a warning, so a pull never destroys unsaved edits. Run <code>guardenv decrypt --force</code> to overwrite.</li>
+  </ul>
+</section>
+
+</div>
+<div class="band dark"><div class="wrap narrow">
+<section>
+  <h2>Release automation</h2>
+  <p>guardenv is released with no manual build steps. Pushing a version tag does everything:</p>
+<pre><code>git tag v0.1.0
+git push origin v0.1.0
+    ↓
+GitHub Actions starts the "release" workflow
+    ↓
+GoReleaser cross-compiles Windows, Linux and macOS (amd64 + arm64),
+embeds the version, and writes checksums.txt
+    ↓
+A GitHub Release is created with the archives attached
+    ↓
+A Scoop manifest is pushed to the scoop-guardenv bucket
+    ↓
+scoop install guardenv  /  scoop update guardenv</code></pre>
+  <p>The workflow and configuration are in the repository: <a href="https://github.com/yantratmika/guardenv/blob/main/.github/workflows/release.yml">release.yml</a> and <a href="https://github.com/yantratmika/guardenv/blob/main/.goreleaser.yaml">.goreleaser.yaml</a>.</p>
+</section>
+</div></div>
+<div class="wrap narrow">
+<section>
+  <h2>Command reference</h2>
+  <div class="scroll"><table>
+    <tr><th>Command</th><th>What it does</th></tr>
+    <tr><td><code>guardenv init</code></td><td>Set up the project: gitignore, config, key, hooks.</td></tr>
+    <tr><td><code>guardenv encrypt [--stage]</code></td><td>Encrypt each <code>.env</code> to <code>guarded.env</code>. <code>--stage</code> runs <code>git add</code> on the results.</td></tr>
+    <tr><td><code>guardenv decrypt [--force]</code></td><td>Decrypt each <code>guarded.env</code> to <code>.env</code>.</td></tr>
+    <tr><td><code>guardenv install-hooks</code></td><td>(Re)install the git hooks.</td></tr>
+    <tr><td><code>guardenv version</code></td><td>Print the installed version.</td></tr>
+  </table></div>
+</section>
+
+<section>
+  <h2>Read the code, check our claims</h2>
+  <p>Everything above can be verified in the source. Issues and pull requests are welcome.</p>
+  <div class="btns">
+    <a class="btn" href="https://github.com/yantratmika/guardenv">GitHub repository</a>
+    <a class="btn ghost" href="why.html#limits">Limits and trade-offs</a>
+  </div>
+</section>
+</div>
+</main>
+
+<footer class="site dark"><div class="wrap">
+  <div class="credit"><img src="assets/yantratmika-logo.png" alt=""><div>Built and maintained by <a href="https://yantratmika.com">Yantratmika</a>, a specialist engineering studio. Released under the MIT license.</div></div>
+  <div class="links">
+    <a href="https://github.com/yantratmika/guardenv">GitHub</a>
+    <a href="https://github.com/yantratmika/guardenv/blob/main/LICENSE">License</a>
+    <a href="privacy.html">Privacy</a>
+    <a href="terms.html">Terms of use</a>
+  </div>
+</div></footer>
+</body>
+</html>
